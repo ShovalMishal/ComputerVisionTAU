@@ -62,6 +62,7 @@ class Trainer:
 
         for batch_idx, (inputs, targets) in enumerate(train_dataloader):
             self.optimizer.zero_grad()
+            inputs, targets = inputs.to(device), targets.to(device)
             # Compute prediction and loss
             preds = self.model(inputs)
             loss = self.criterion(preds, targets)
@@ -105,6 +106,7 @@ class Trainer:
 
         for batch_idx, (inputs, targets) in enumerate(dataloader):
             torch.no_grad()
+            inputs, targets = inputs.to(device), targets.to(device)
             preds = self.model(inputs)
             loss = self.criterion(preds, targets)
             total_loss += loss
