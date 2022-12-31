@@ -3,6 +3,7 @@ import os
 import json
 from dataclasses import dataclass
 
+from sklearn import metrics
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
@@ -104,7 +105,6 @@ class Trainer:
         print_every = max(int(len(dataloader) / 10), 1)
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(dataloader):
-                torch.no_grad()
                 inputs, targets = inputs.to(device), targets.to(device)
                 preds = self.model(inputs)
                 loss = self.criterion(preds, targets).item()
@@ -117,7 +117,6 @@ class Trainer:
                     print(f'Epoch [{self.epoch:03d}] | Loss: {avg_loss:.3f} | '
                           f'Acc: {accuracy:.2f}[%] '
                           f'({correct_labeled_samples}/{nof_samples})')
-
             return avg_loss, accuracy
 
     def validate(self):
@@ -206,3 +205,37 @@ class Trainer:
                 torch.save(state, checkpoint_filename)
                 best_acc = val_acc
         self.write_output(logging_parameters, output_data)
+
+    def get_confusion_matrix(self, dataset: torch.utils.data.Dataset):
+        self.model.eval()
+        dataloader = DataLoader(dataset,
+                                batch_size=self.batch_size,
+                                shuffle=True)
+        total_loss = 0
+        avg_loss = 0
+        accuracy = 0
+        nof_samples = 0
+        correct_labeled_samples = 0
+        print_every = max(int(len(dataloader) / 10), 1)
+        all_preds, all_targets = torch.empty(0).to(device), torch.empty(0).to(device)
+        with torch.no_grad():
+            for batch_idx, (inputs, targets) in enumerate(dataloader):
+                inputs, targets = inputs.to(device), targets.to(device)
+                preds = self.model(inputs)
+                loss = self.criterion(preds, targets).item()
+                total_loss += loss
+                avg_loss = total_loss / (batch_idx + 1)
+                correct_labeled_samples += torch.sum(torch.argmax(preds, dim=1) == targets).item()
+                nof_samples = self.batch_size * (batch_idx + 1)
+                accuracy = correct_labeled_samples / nof_samples * 100
+                all_targets = torch.cat((all_targets, targets))
+                curr_preds = torch.argmax(preds, dim=1)
+                all_preds = torch.cat((all_preds, curr_preds))
+                if batch_idx % print_every == 0 or batch_idx == len(dataloader) - 1:
+                    print(f'Epoch [{self.epoch:03d}] | Loss: {avg_loss:.3f} | '
+                          f'Acc: {accuracy:.2f}[%] '
+                          f'({correct_labeled_samples}/{nof_samples})')
+
+        tn, fp, fn, tp = metrics.confusion_matrix(all_targets.cpu(), all_preds.cpu()).ravel()
+        print(f"tn is {tn}, fn is {fn}, fp is {fp}, tp is {tp}")
+        return avg_loss, accuracy
