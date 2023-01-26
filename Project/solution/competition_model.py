@@ -1,6 +1,7 @@
 """Define your architecture here."""
 import torch
-from models import SimpleNet
+
+from Project.solution.models import get_efficient_model
 
 
 def my_competition_model():
@@ -9,7 +10,7 @@ def my_competition_model():
     Do not change the model load line.
     """
     # initialize your model:
-    model = SimpleNet()
+    model = get_efficient_model()
     # load your model using exactly this line (don't change it):
     model.load_state_dict(torch.load('checkpoints/competition_model.pt')['model'])
     return model

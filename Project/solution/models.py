@@ -5,10 +5,12 @@ import torch.nn.functional as F
 from torch import nn
 
 from xcpetion import build_xception_backbone
+from EfficientNet import EfficientNet
 
 
 class SimpleNet(nn.Module):
     """Simple Convolutional and Fully Connect network."""
+
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 6, kernel_size=(7, 7))
@@ -41,5 +43,24 @@ def get_xception_based_model() -> nn.Module:
     (2) Override `custom_network`'s fc attribute with the binary
     classification head stated in the exercise.
     """
-    """INSERT YOUR CODE HERE, overrun return."""
-    return SimpleNet()
+    model = build_xception_backbone(pretrained=True)
+    model.fc = nn.Sequential(nn.Linear(2048, 1000),
+                             nn.ReLU(),
+                             nn.Linear(1000, 256),
+                             nn.ReLU(),
+                             nn.Linear(256, 64),
+                             nn.ReLU(),
+                             nn.Linear(64, 2))
+    return model
+
+
+def get_efficient_model() -> nn.Module:
+    model = EfficientNet.from_pretrained('efficientnet-b0')
+    model._fc = nn.Sequential(nn.Linear(1280, 512),
+                              nn.ReLU(),
+                              nn.Linear(512, 256),
+                              nn.ReLU(),
+                              nn.Linear(256, 64),
+                              nn.ReLU(),
+                              nn.Linear(64, 2))
+    return model

@@ -11,6 +11,9 @@ from torch.utils.data import DataLoader
 from common import FIGURES_DIR
 from utils import load_dataset, load_model
 
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -51,8 +54,15 @@ def get_grad_cam_visualization(test_dataset: torch.utils.data.Dataset,
         the true label of that sample (since it is an output of a DataLoader
         of batch size 1, it's a tensor of shape (1,)).
     """
-    """INSERT YOUR CODE HERE, overrun return."""
-    return np.random.rand(256, 256, 3), torch.randint(0, 2, (1,))
+
+    dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
+    img, label = next(iter(dataloader))
+    cam = GradCAM(model=model, target_layers=[model.conv3], use_cuda=torch.cuda.is_available())
+    grayscale_cam = cam(input_tensor=img)
+    rgb_img = np.float32(np.transpose(img[0].numpy(), (1, 2, 0)))
+    rgb_img = (rgb_img - rgb_img.min()) / (rgb_img.max() - rgb_img.min())
+    visualization = show_cam_on_image(rgb_img, grayscale_cam[0], use_rgb=True)
+    return visualization, label
 
 
 def main():

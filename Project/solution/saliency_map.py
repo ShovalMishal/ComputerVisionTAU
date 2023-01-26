@@ -28,7 +28,7 @@ def parse_args():
                         default='XceptionBased', type=str,
                         help='Model name: SimpleNet or XceptionBased.')
     parser.add_argument('--checkpoint_path', '-cpp',
-                        default='checkpoints/XceptionBased.pt', type=str,
+                        default='XceptionBased.pt', type=str,
                         help='Path to model checkpoint.')
     parser.add_argument('--dataset', '-d',
                         default='fakes_dataset', type=str,
@@ -62,7 +62,13 @@ def compute_gradient_saliency_maps(samples: torch.tensor,
         shape Bx256x256 where B is the number of images in samples.
     """
     """INSERT YOUR CODE HERE, overrun return."""
-    return torch.rand(6, 256, 256)
+    samples.requires_grad_()
+    out = model(samples)
+    true_labels_scores = out.gather(1, true_labels.reshape(-1, 1))
+    true_labels_scores.backward(torch.ones_like(true_labels_scores))
+    grads = torch.abs(samples.grad)
+    saliency, _ = torch.max(grads, 1)
+    return saliency
 
 
 def main():  # pylint: disable=R0914, R0915

@@ -4,7 +4,6 @@ import os
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-import numpy as np
 
 
 class FacesDataset(Dataset):
